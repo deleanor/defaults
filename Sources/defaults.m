@@ -34,14 +34,14 @@ const unsigned char defaultsVersionString[] = "@(#)PROGRAM:defaults  PROJECT:def
 int main(int argc, char *argv[], char *envp[])
 {
 	@autoreleasepool {
-		NSMutableArray <NSString *> *args = [[[NSProcessInfo processInfo] arguments] mutableCopy];
+		NSMutableArray *args = [[[NSProcessInfo processInfo] arguments] mutableCopy];
 
 		CFStringRef host = kCFPreferencesAnyHost;
-		if (args.count >= 2 && [args[1] isEqualToString:@"-currentHost"]) {
+		if (args.count >= 2 && [[args objectAtIndex:1] isEqualToString:@"-currentHost"]) {
 			host = kCFPreferencesCurrentHost;
 			[args removeObjectAtIndex:1];
-		} else if (args.count >= 3  && [args[1] isEqualToString:@"-host"]) {
-			host = (__bridge CFStringRef)args[2];
+		} else if (args.count >= 3  && [[args objectAtIndex:1] isEqualToString:@"-host"]) {
+			host = (__bridge CFStringRef)[args objectAtIndex:2];
 			[args removeObjectAtIndex:2];
 			[args removeObjectAtIndex:1];
 		}
@@ -56,29 +56,29 @@ int main(int argc, char *argv[], char *envp[])
 
 		CFStringRef container = CFSTR("kCFPreferencesNoContainer");
 
-		if (args.count >= 4 && [args[2] isEqualToString:@"-container"]) {
-			if ([args[3] hasPrefix:@"/"]) {
-				container = (__bridge CFStringRef)[args[3] stringByResolvingSymlinksInPath];
-			} else if ([args[3] hasPrefix:@"group."]) {
+		if (args.count >= 4 && [[args objectAtIndex:2] isEqualToString:@"-container"]) {
+			if ([[args objectAtIndex:3] hasPrefix:@"/"]) {
+				container = (__bridge CFStringRef)[[args objectAtIndex:3] stringByResolvingSymlinksInPath];
+			} else if ([[args objectAtIndex:3] hasPrefix:@"group."]) {
 				NSURL *url = [[NSFileManager defaultManager]
-					containerURLForSecurityApplicationGroupIdentifier:args[3]];
+					containerURLForSecurityApplicationGroupIdentifier:[args objectAtIndex:3]];
 				container = (__bridge CFStringRef)[(NSURL*)[url copy] path];
 			} else {
-				LSApplicationProxy *app = [LSApplicationProxy applicationProxyForIdentifier:args[3]];
+				LSApplicationProxy *app = [LSApplicationProxy applicationProxyForIdentifier:[args objectAtIndex:3]];
 				container = (__bridge CFStringRef)[app.containerURL path];
 			}
 			[args removeObjectAtIndex:3];
 			[args removeObjectAtIndex:2];
 		}
 
-		[args replaceObjectAtIndex:1 withObject:[args[1] lowercaseString]];
+		[args replaceObjectAtIndex:1 withObject:[[args objectAtIndex:1] lowercaseString]];
 
-		if (args.count == 1 || (args.count >= 2 && [args[1] isEqualToString:@"help"])) {
+		if (args.count == 1 || (args.count >= 2 && [[args objectAtIndex:1] isEqualToString:@"help"])) {
 			usage();
 			return args.count == 1 ? 255 : 0;
 		}
 
-		if ([args[1] isEqualToString:@"domains"]) {
+		if ([[args objectAtIndex:1] isEqualToString:@"domains"]) {
 			NSMutableArray *domains = [(__bridge_transfer NSArray*)CFPreferencesCopyApplicationList(kCFPreferencesCurrentUser, host) mutableCopy];
 			if (domains.count != 0) {
 				[domains removeObjectAtIndex:[domains indexOfObject:(id)kCFPreferencesAnyApplication]];
@@ -86,7 +86,7 @@ int main(int argc, char *argv[], char *envp[])
 			}
 			printf("%s\n", [domains componentsJoinedByString:@", "].UTF8String);
 			return 0;
-		} else if (args.count == 2 && [args[1] isEqualToString:@"read"]) {
+		} else if (args.count == 2 && [[args objectAtIndex:1] isEqualToString:@"read"]) {
 			NSArray *prefs = (__bridge_transfer NSArray *)
 				CFPreferencesCopyApplicationList(kCFPreferencesCurrentUser, host);
 			NSMutableDictionary *out = [NSMutableDictionary new];
@@ -98,21 +98,21 @@ int main(int argc, char *argv[], char *envp[])
 			return 0;
 		}
 
-		if (args.count >= 3 && [args[1] isEqualToString:@"find"]) {
+		if (args.count >= 3 && [[args objectAtIndex:1] isEqualToString:@"find"]) {
 			NSArray *domains = (__bridge_transfer NSArray*)CFPreferencesCopyApplicationList(
 					kCFPreferencesCurrentUser, host);
 			long found = 0;
 			BOOL success = false;
 			for (NSString *domain in domains) {
 				found = 0;
-				if ([domain rangeOfString:args[2] options:NSCaseInsensitiveSearch].location != NSNotFound)
+				if ([domain rangeOfString:[args objectAtIndex:2] options:NSCaseInsensitiveSearch].location != NSNotFound)
 					found++;
 				NSDictionary *dict = (__bridge_transfer NSDictionary*)CFPreferencesCopyMultiple(NULL,
 						(__bridge CFStringRef)domain, kCFPreferencesCurrentUser, host);
 				NSArray *flattened = flatten(dict);
 				NSLog(@"%@", flattened);
 				for (NSString *item in flattened) {
-					if ([item rangeOfString:args[2] options:NSCaseInsensitiveSearch].location != NSNotFound)
+					if ([item rangeOfString:[args objectAtIndex:2] options:NSCaseInsensitiveSearch].location != NSNotFound)
 						found++;
 				}
 				if (found) {
@@ -122,51 +122,51 @@ int main(int argc, char *argv[], char *envp[])
 				}
 			}
 			if (!success)
-				NSLog(@"No domain, key, nor value containing '%@'", args[2]);
+				NSLog(@"No domain, key, nor value containing '%@'", [args objectAtIndex:2]);
 			return 0;
 		}
 
 		NSString *appid;
 
 		if (args.count >= 3) {
-			if ([args[2] isEqualToString:@"-g"] || [args[2] isEqualToString:@"-globalDomain"] ||
-					[args[2] isEqualToString:@"NSGlobalDomain"] || [args[2] isEqualToString:@"Apple Global Domain"])
+			if ([[args objectAtIndex:2] isEqualToString:@"-g"] || [[args objectAtIndex:2] isEqualToString:@"-globalDomain"] ||
+					[[args objectAtIndex:2] isEqualToString:@"NSGlobalDomain"] || [[args objectAtIndex:2] isEqualToString:@"Apple Global Domain"])
 				appid = (__bridge NSString*)kCFPreferencesAnyApplication;
-			else if (args.count >= 4 && [args[2] isEqualToString:@"-app"]) {
+			else if (args.count >= 4 && [[args objectAtIndex:2] isEqualToString:@"-app"]) {
 				BOOL directory;
-				if ([[NSFileManager defaultManager] fileExistsAtPath:args[3] isDirectory:&directory] && directory) {
-					NSBundle *appBundle = [NSBundle bundleWithPath:[args[3] stringByResolvingSymlinksInPath]];
+				if ([[NSFileManager defaultManager] fileExistsAtPath:[args objectAtIndex:3] isDirectory:&directory] && directory) {
+					NSBundle *appBundle = [NSBundle bundleWithPath:[[args [objectAtIndex:3] stringByResolvingSymlinksInPath]];
 					if (appBundle == nil) {
-						NSLog(@"Couldn't open application %@; defaults unchanged", args[3]);
+						NSLog(@"Couldn't open application %@; defaults unchanged", [args objectAtIndex:3]);
 						return 1;
 					}
 					appid = [appBundle bundleIdentifier];
 					if (appid == nil) {
-						NSLog(@"Can't determine domain name for application %@; defaults unchanged", args[3]);
+						NSLog(@"Can't determine domain name for application %@; defaults unchanged", [args objectAtIndex:3]);
 						return 1;
 					}
 				} else {
 					LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
-					NSArray<LSApplicationProxy*> *apps = [workspace allInstalledApplications];
+					NSArray *apps = [workspace allInstalledApplications];
 					for (LSApplicationProxy *proxy in apps) {
-						if ([args[3] isEqualToString:[proxy localizedNameForContext:nil]]) {
+						if ([[args objectAtIndex:3] isEqualToString:[proxy localizedNameForContext:nil]]) {
 							appid = proxy.applicationIdentifier;
 							break;
 						}
 					}
 					if (appid == nil) {
-						NSLog(@"Couldn't find an application named \"%@\"; defaults unchanged", args[3]);
+						NSLog(@"Couldn't find an application named \"%@\"; defaults unchanged", [args objectAtIndex:3]);
 						return 1;
 					}
 				}
 				[args removeObjectAtIndex:2];
-			} else if ([args[2] hasPrefix:@"/"]) {
-				appid = [args[2] stringByResolvingSymlinksInPath];
+			} else if ([[args objectAtIndex:2] hasPrefix:@"/"]) {
+				appid = [[args objectAtIndex:2] stringByResolvingSymlinksInPath];
 			} else
-				appid = args[2];
+				appid = [args objectAtIndex:2];
 		}
 
-		if ([args[1] isEqualToString:@"read"]) {
+		if ([[args objectAtIndex:1] isEqualToString:@"read"]) {
 			NSDictionary *result = (__bridge_transfer NSDictionary *)_CFPreferencesCopyMultipleWithContainer(NULL,
 					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
 
@@ -178,7 +178,7 @@ int main(int argc, char *argv[], char *envp[])
 				printf("%s\n", result.description.UTF8String);
 				return 0;
 			} else {
-				if ([result objectForKey:args[3]] == nil) {
+				if ([result objectForKey:[args objectAtIndex:3]] == nil) {
 					NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, args[3]);
 					return 1;
 				}

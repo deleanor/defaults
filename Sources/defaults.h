@@ -51,7 +51,7 @@ NSString *prettyName(NSString *);
 
 @interface LSApplicationWorkspace : NSObject
 + (id)defaultWorkspace;
-- (NSArray<LSApplicationProxy *> *)allInstalledApplications;
+- (NSArray *)allInstalledApplications;
 @end
 
 CFArrayRef _CFPreferencesCopyKeyListWithContainer(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
