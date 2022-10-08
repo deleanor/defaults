@@ -135,7 +135,7 @@ int main(int argc, char *argv[], char *envp[])
 			else if (args.count >= 4 && [[args objectAtIndex:2] isEqualToString:@"-app"]) {
 				BOOL directory;
 				if ([[NSFileManager defaultManager] fileExistsAtPath:[args objectAtIndex:3] isDirectory:&directory] && directory) {
-					NSBundle *appBundle = [NSBundle bundleWithPath:[[args [objectAtIndex:3] stringByResolvingSymlinksInPath]];
+					NSBundle *appBundle = [NSBundle bundleWithPath:[[args objectAtIndex:3] stringByResolvingSymlinksInPath]];
 					if (appBundle == nil) {
 						NSLog(@"Couldn't open application %@; defaults unchanged", [args objectAtIndex:3]);
 						return 1;
@@ -179,24 +179,24 @@ int main(int argc, char *argv[], char *envp[])
 				return 0;
 			} else {
 				if ([result objectForKey:[args objectAtIndex:3]] == nil) {
-					NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, args[3]);
+					NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, [args objectAtIndex:3]);
 					return 1;
 				}
-				printf("%s\n", [[result objectForKey:args[3]] description].UTF8String);
+				printf("%s\n", [[result objectForKey:[args objectAtIndex:3]] description].UTF8String);
 				return 0;
 			}
 		}
 
-		if (args.count == 5 && [args[1] isEqualToString:@"rename"]) {
-			CFPropertyListRef value = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)args[3],
+		if (args.count == 5 && [[args objectAtIndex:1] isEqualToString:@"rename"]) {
+			CFPropertyListRef value = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3],
 					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
 			if (value == NULL) {
-				NSLog(@"Key %@ does not exist in domain %@; leaving defaults unchanged", args[3], prettyName(appid));
+				NSLog(@"Key %@ does not exist in domain %@; leaving defaults unchanged", [args objectAtIndex:3], prettyName(appid));
 				return 1;
 			}
-			_CFPreferencesSetValueWithContainer((__bridge CFStringRef)args[4], value, (__bridge CFStringRef)appid,
+			_CFPreferencesSetValueWithContainer((__bridge CFStringRef)[args objectAtIndex:4], value, (__bridge CFStringRef)appid,
 					kCFPreferencesCurrentUser, host, container);
-			_CFPreferencesSetValueWithContainer((__bridge CFStringRef)args[3], NULL, (__bridge CFStringRef)appid,
+			_CFPreferencesSetValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3], NULL, (__bridge CFStringRef)appid,
 					kCFPreferencesCurrentUser, host, container);
 			Boolean ret = _CFPreferencesSynchronizeWithContainer((__bridge CFStringRef)appid,
 						kCFPreferencesCurrentUser, host, container);
@@ -208,11 +208,11 @@ int main(int argc, char *argv[], char *envp[])
 			return 0;
 		}
 
-		if (args.count >= 4 && [args[1] isEqualToString:@"read-type"]) {
-			CFPropertyListRef result = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)args[3],
+		if (args.count >= 4 && [[args objectAtIndex:1] isEqualToString:@"read-type"]) {
+			CFPropertyListRef result = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3],
 					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
 			if (result == NULL) {
-				NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, args[3]);
+				NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, [args objectAtIndex:3]);
 				return 1;
 			}
 			CFTypeID type = CFGetTypeID(result);
@@ -240,7 +240,7 @@ int main(int argc, char *argv[], char *envp[])
 			return 0;
 		}
 
-		if ([args[1] isEqualToString:@"export"]) {
+		if ([[args objectAtIndex:1] isEqualToString:@"export"]) {
 			if (args.count < 3) {
 				usage();
 				return 255;
@@ -260,7 +260,7 @@ int main(int argc, char *argv[], char *envp[])
 			}
 			NSError *error;
 			NSPropertyListFormat format = NSPropertyListBinaryFormat_v1_0;
-			if ([args[3] isEqualToString:@"-"]) {
+			if ([[args objectAtIndex:3] isEqualToString:@"-"]) {
 				format = NSPropertyListXMLFormat_v1_0;
 			}
 
@@ -270,18 +270,18 @@ int main(int argc, char *argv[], char *envp[])
 																									error:&error];
 
 			if (error) {
-				NSLog(@"Could not export domain %@ to %@ due to %@", appid, args[3], error);
+				NSLog(@"Could not export domain %@ to %@ due to %@", appid, [args objectAtIndex:3], error);
 				return 1;
 			}
 			if (format == NSPropertyListXMLFormat_v1_0) {
 				NSFileHandle *fh = [NSFileHandle fileHandleWithStandardOutput];
 				[fh writeData:outData];
 			} else
-				[outData writeToFile:args[3] atomically:true];
+				[outData writeToFile:[args objectAtIndex:3] atomically:true];
 			return 0;
 		}
 
-		if ([args[1] isEqualToString:@"import"]) {
+		if ([[args objectAtIndex:1] isEqualToString:@"import"]) {
 			if (args.count < 3) {
 				usage();
 				return 255;
@@ -292,14 +292,14 @@ int main(int argc, char *argv[], char *envp[])
 			}
 
 			NSData *inputData;
-			if ([args[3] isEqualToString:@"-"]) {
+			if ([[args objectAtIndex:3] isEqualToString:@"-"]) {
 				NSFileHandle *fh = [NSFileHandle fileHandleWithStandardInput];
 				inputData = [fh readDataToEndOfFile];
 			} else {
-				inputData = [NSData dataWithContentsOfFile:args[3]];
+				inputData = [NSData dataWithContentsOfFile:[args objectAtIndex:3]];
 			}
 			if (inputData == nil) {
-				NSLog(@"Could not read data from %@", args[3]);
+				NSLog(@"Could not read data from %@", [args objectAtIndex:3]);
 				return 1;
 			}
 
@@ -309,7 +309,7 @@ int main(int argc, char *argv[], char *envp[])
 																																					 format:0
 																																						error:&error];
 			if (error) {
-				NSLog(@"Could not parse property list from %@ due to %@", args[3], error);
+				NSLog(@"Could not parse property list from %@ due to %@", [args objectAtIndex:3], error);
 				return 1;
 			}
 
@@ -328,17 +328,17 @@ int main(int argc, char *argv[], char *envp[])
 			return 0;
 		}
 
-		if ((args.count == 4 || args.count == 3) && ([args[1] isEqualToString:@"delete"] ||
-				/* remove is an undocumented alias for delete */ [args[1] isEqualToString:@"remove"])) {
+		if ((args.count == 4 || args.count == 3) && ([[args objectAtIndex:1] isEqualToString:@"delete"] ||
+				/* remove is an undocumented alias for delete */ [[args objectAtIndex:1] isEqualToString:@"remove"])) {
 			if (args.count == 4) {
-				CFPropertyListRef result = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)args[3],
+				CFPropertyListRef result = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3],
 						(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
 				if (result == NULL) {
 					NSLog(@"\nDomain (%@) not found.\nDefaults have not been changed.\n", appid);
 					CFRelease(result);
 					return 1;
 				}
-				_CFPreferencesSetValueWithContainer((__bridge CFStringRef)args[3], NULL, (__bridge CFStringRef)appid,
+				_CFPreferencesSetValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3], NULL, (__bridge CFStringRef)appid,
 						kCFPreferencesCurrentUser, host, container);
 				Boolean ret = _CFPreferencesSynchronizeWithContainer((__bridge CFStringRef)appid,
 						kCFPreferencesCurrentUser, host, container);
@@ -363,7 +363,7 @@ int main(int argc, char *argv[], char *envp[])
 			return 1;
 		}
 
-		if ([args[1] isEqualToString:@"write"]) {
+		if ([[args objectAtIndex:1] isEqualToString:@"write"]) {
 			if (args.count < 4) {
 				usage();
 				return 255;
