@@ -56,21 +56,6 @@ int main(int argc, char *argv[], char *envp[])
 
 		CFStringRef container = CFSTR("kCFPreferencesNoContainer");
 
-		if (args.count >= 4 && [[args objectAtIndex:2] isEqualToString:@"-container"]) {
-			if ([[args objectAtIndex:3] hasPrefix:@"/"]) {
-				container = (__bridge CFStringRef)[[args objectAtIndex:3] stringByResolvingSymlinksInPath];
-			} else if ([[args objectAtIndex:3] hasPrefix:@"group."]) {
-				NSURL *url = [[NSFileManager defaultManager]
-					containerURLForSecurityApplicationGroupIdentifier:[args objectAtIndex:3]];
-				container = (__bridge CFStringRef)[(NSURL*)[url copy] path];
-			} else {
-				LSApplicationProxy *app = [LSApplicationProxy applicationProxyForIdentifier:[args objectAtIndex:3]];
-				container = (__bridge CFStringRef)[app.containerURL path];
-			}
-			[args removeObjectAtIndex:3];
-			[args removeObjectAtIndex:2];
-		}
-
 		[args replaceObjectAtIndex:1 withObject:[[args objectAtIndex:1] lowercaseString]];
 
 		if (args.count == 1 || (args.count >= 2 && [[args objectAtIndex:1] isEqualToString:@"help"])) {
@@ -94,7 +79,8 @@ int main(int argc, char *argv[], char *envp[])
 				[out setObject:(__bridge_transfer NSDictionary*)CFPreferencesCopyMultiple(NULL, (__bridge CFStringRef)domain, kCFPreferencesCurrentUser, host)
 								forKey:prettyName(domain)];
 			}
-			printf("%s\n", [NSString stringWithFormat:@"%@", out].UTF8String);
+			NSString *outputString = (NSString*)[NSString stringWithFormat:@"%@", out];
+			printf("%s\n", [outputString cString]);
 			return 0;
 		}
 
@@ -258,19 +244,18 @@ int main(int argc, char *argv[], char *envp[])
 				NSLog(@"\nThe domain %@ does not exist\n", appid);
 				return 1;
 			}
-			NSError *error;
+			NSString *errorDescription;
 			NSPropertyListFormat format = NSPropertyListBinaryFormat_v1_0;
 			if ([[args objectAtIndex:3] isEqualToString:@"-"]) {
 				format = NSPropertyListXMLFormat_v1_0;
 			}
 
-			NSData *outData = [NSPropertyListSerialization dataWithPropertyList:out
-																								 format:format
-																								options:0
-																									error:&error];
+			NSData *outData = [NSPropertyListSerialization dataFromPropertyList:out
+				format:format
+				errorDescription:&errorDescription];
 
-			if (error) {
-				NSLog(@"Could not export domain %@ to %@ due to %@", appid, [args objectAtIndex:3], error);
+			if (errorDescription) {
+				NSLog(@"Could not export domain %@ to %@ due to %@", appid, [args objectAtIndex:3], errorDescription);
 				return 1;
 			}
 			if (format == NSPropertyListXMLFormat_v1_0) {
@@ -303,13 +288,13 @@ int main(int argc, char *argv[], char *envp[])
 				return 1;
 			}
 
-			NSError *error;
-			NSObject *inputDict = [NSPropertyListSerialization propertyListWithData:inputData
-																																					options:0
-																																					 format:0
-																																						error:&error];
-			if (error) {
-				NSLog(@"Could not parse property list from %@ due to %@", [args objectAtIndex:3], error);
+			NSString *errorDescription;
+			NSObject *inputDict = [NSPropertyListSerialization propertyListFromData:inputData
+			mutabilityOption:NSPropertyListImmutable
+			 format:0
+			errorDescription:&errorDescription];
+			if (errorDescription) {
+				NSLog(@"Could not parse property list from %@ due to %@", [args objectAtIndex:3], errorDescription);
 				return 1;
 			}
 
