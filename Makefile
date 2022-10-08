@@ -12,7 +12,7 @@ SRC += Sources/NSData+HexString.m
 all: defaults
 
 defaults: $(SRC:%=%.o)
-	$(CC) $(LDFLAGS) -o $@ $^ -framework CoreFoundation -fobjc-arc
+	$(CC) $(LDFLAGS) -o $@ $^ -framework CoreFoundation -framework Foundation -fobjc-arc -lobjc
 	$(STRIP) $@
 	-$(LDID) -Sent.plist $@
 
