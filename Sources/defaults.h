@@ -53,13 +53,3 @@ NSString *prettyName(NSString *);
 + (id)defaultWorkspace;
 - (NSArray *)allInstalledApplications;
 @end
-
-CFArrayRef _CFPreferencesCopyKeyListWithContainer(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
-CFDictionaryRef _CFPreferencesCopyMultipleWithContainer(CFArrayRef keysToFetch, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
-CFPropertyListRef _CFPreferencesCopyValueWithContainer(CFStringRef key, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
-void _CFPreferencesSetMultipleWithContainer(CFDictionaryRef keysToSet, CFArrayRef keysToRemove, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
-void _CFPreferencesSetValueWithContainer(CFStringRef key, CFPropertyListRef value, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
-Boolean _CFPreferencesSynchronizeWithContainer(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName, CFStringRef container);
-void _CFPrefsSetSynchronizeIsSynchronous(int);
-void _CFPrefsSynchronizeForProcessTermination(void);
-void _CFPrefSetInvalidPropertyListDeletionEnabled(int);

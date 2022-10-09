@@ -51,9 +51,6 @@ int main(int argc, char *argv[], char *envp[])
 			return 255;
 		}
 
-		_CFPrefsSetSynchronizeIsSynchronous(1);
-		_CFPrefSetInvalidPropertyListDeletionEnabled(0);
-
 		CFStringRef container = CFSTR("kCFPreferencesNoContainer");
 
 		[args replaceObjectAtIndex:1 withObject:[[args objectAtIndex:1] lowercaseString]];
@@ -153,8 +150,8 @@ int main(int argc, char *argv[], char *envp[])
 		}
 
 		if ([[args objectAtIndex:1] isEqualToString:@"read"]) {
-			NSDictionary *result = (__bridge_transfer NSDictionary *)_CFPreferencesCopyMultipleWithContainer(NULL,
-					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
+			NSDictionary *result = (__bridge_transfer NSDictionary *)CFPreferencesCopyMultiple(NULL,
+					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host);
 
 			if (args.count == 3) {
 				if ([result count] == 0) {
@@ -174,19 +171,18 @@ int main(int argc, char *argv[], char *envp[])
 		}
 
 		if (args.count == 5 && [[args objectAtIndex:1] isEqualToString:@"rename"]) {
-			CFPropertyListRef value = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3],
-					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
+			CFPropertyListRef value = CFPreferencesCopyValue((__bridge CFStringRef)[args objectAtIndex:3],
+					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host);
 			if (value == NULL) {
 				NSLog(@"Key %@ does not exist in domain %@; leaving defaults unchanged", [args objectAtIndex:3], prettyName(appid));
 				return 1;
 			}
-			_CFPreferencesSetValueWithContainer((__bridge CFStringRef)[args objectAtIndex:4], value, (__bridge CFStringRef)appid,
-					kCFPreferencesCurrentUser, host, container);
-			_CFPreferencesSetValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3], NULL, (__bridge CFStringRef)appid,
-					kCFPreferencesCurrentUser, host, container);
-			Boolean ret = _CFPreferencesSynchronizeWithContainer((__bridge CFStringRef)appid,
-						kCFPreferencesCurrentUser, host, container);
-			_CFPrefsSynchronizeForProcessTermination();
+			CFPreferencesSetValue((__bridge CFStringRef)[args objectAtIndex:4], value, (__bridge CFStringRef)appid,
+					kCFPreferencesCurrentUser, host);
+			CFPreferencesSetValue((__bridge CFStringRef)[args objectAtIndex:3], NULL, (__bridge CFStringRef)appid,
+					kCFPreferencesCurrentUser, host);
+			Boolean ret = CFPreferencesSynchronize((__bridge CFStringRef)appid,
+						kCFPreferencesCurrentUser, host);
 			if (!ret) {
 				NSLog(@"Failed to write domain %@", prettyName(appid));
 				return 1;
@@ -195,8 +191,8 @@ int main(int argc, char *argv[], char *envp[])
 		}
 
 		if (args.count >= 4 && [[args objectAtIndex:1] isEqualToString:@"read-type"]) {
-			CFPropertyListRef result = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3],
-					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
+			CFPropertyListRef result = CFPreferencesCopyValue((__bridge CFStringRef)[args objectAtIndex:3],
+					(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host);
 			if (result == NULL) {
 				NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, [args objectAtIndex:3]);
 				return 1;
@@ -235,11 +231,11 @@ int main(int argc, char *argv[], char *envp[])
 				NSLog(@"\nNeed a path to write to");
 				return 1;
 			}
-			NSArray *keys = (__bridge_transfer NSArray*)_CFPreferencesCopyKeyListWithContainer((__bridge CFStringRef)appid,
-					kCFPreferencesCurrentUser, host, container);
-			NSDictionary *out = (__bridge_transfer NSDictionary *)_CFPreferencesCopyMultipleWithContainer(
+			NSArray *keys = (__bridge_transfer NSArray*)CFPreferencesCopyKeyList((__bridge CFStringRef)appid,
+					kCFPreferencesCurrentUser, host);
+			NSDictionary *out = (__bridge_transfer NSDictionary *)CFPreferencesCopyMultiple(
 					(__bridge CFArrayRef)keys, (__bridge CFStringRef)appid,
-					kCFPreferencesCurrentUser, host, container);
+					kCFPreferencesCurrentUser, host);
 			if (out == 0) {
 				NSLog(@"\nThe domain %@ does not exist\n", appid);
 				return 1;
@@ -303,46 +299,43 @@ int main(int argc, char *argv[], char *envp[])
 				return 1;
 			}
 			for (NSString *key in [(NSDictionary*)inputDict allKeys]) {
-				_CFPreferencesSetValueWithContainer((__bridge CFStringRef)key,
+				CFPreferencesSetValue((__bridge CFStringRef)key,
 						(__bridge CFPropertyListRef)[(NSDictionary*)inputDict objectForKey:key],
-						(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
+						(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host);
 			}
-			_CFPreferencesSynchronizeWithContainer((__bridge CFStringRef)appid, kCFPreferencesCurrentUser,
-					host, container);
-			_CFPrefsSynchronizeForProcessTermination();
+			CFPreferencesSynchronize((__bridge CFStringRef)appid, kCFPreferencesCurrentUser,
+					host);
 			return 0;
 		}
 
 		if ((args.count == 4 || args.count == 3) && ([[args objectAtIndex:1] isEqualToString:@"delete"] ||
 				/* remove is an undocumented alias for delete */ [[args objectAtIndex:1] isEqualToString:@"remove"])) {
 			if (args.count == 4) {
-				CFPropertyListRef result = _CFPreferencesCopyValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3],
-						(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
+				CFPropertyListRef result = CFPreferencesCopyValue((__bridge CFStringRef)[args objectAtIndex:3],
+						(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host);
 				if (result == NULL) {
 					NSLog(@"\nDomain (%@) not found.\nDefaults have not been changed.\n", appid);
 					CFRelease(result);
 					return 1;
 				}
-				_CFPreferencesSetValueWithContainer((__bridge CFStringRef)[args objectAtIndex:3], NULL, (__bridge CFStringRef)appid,
-						kCFPreferencesCurrentUser, host, container);
-				Boolean ret = _CFPreferencesSynchronizeWithContainer((__bridge CFStringRef)appid,
-						kCFPreferencesCurrentUser, host, container);
-				_CFPrefsSynchronizeForProcessTermination();
+				CFPreferencesSetValue((__bridge CFStringRef)[args objectAtIndex:3], NULL, (__bridge CFStringRef)appid,
+						kCFPreferencesCurrentUser, host);
+				Boolean ret = CFPreferencesSynchronize((__bridge CFStringRef)appid,
+						kCFPreferencesCurrentUser, host);
 				return ret ? 0 : 1;
 			} else if (args.count == 3) {
-				CFArrayRef keys = _CFPreferencesCopyKeyListWithContainer((__bridge CFStringRef)appid,
-						kCFPreferencesCurrentUser, host, container);
+				CFArrayRef keys = CFPreferencesCopyKeyList((__bridge CFStringRef)appid,
+						kCFPreferencesCurrentUser, host);
 				if (keys == NULL) {
 					NSLog(@"\nDomain (%@) not found.\nDefaults have not been changed.\n", appid);
 					return 1;
 				}
 				for (NSString *key in (__bridge NSArray*)keys) {
-					_CFPreferencesSetValueWithContainer((__bridge CFStringRef)key, NULL,
-							(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host, container);
+					CFPreferencesSetValue((__bridge CFStringRef)key, NULL,
+							(__bridge CFStringRef)appid, kCFPreferencesCurrentUser, host);
 				}
-				Boolean ret = _CFPreferencesSynchronizeWithContainer((__bridge CFStringRef)appid,
-						kCFPreferencesCurrentUser, host, container);
-				_CFPrefsSynchronizeForProcessTermination();
+				Boolean ret = CFPreferencesSynchronize((__bridge CFStringRef)appid,
+						kCFPreferencesCurrentUser, host);
 				return ret ? 0 : 1;
 			}
 			return 1;
