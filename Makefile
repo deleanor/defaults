@@ -1,5 +1,5 @@
-CC      ?= xcrun cc
-STRIP   ?= xcrun strip
+CC      ?= cc
+STRIP   ?= strip
 CFLAGS  ?= -O2
 LDFLAGS ?= -O2
 
@@ -12,12 +12,12 @@ SRC += Sources/NSData+HexString.m
 all: defaults
 
 defaults: $(SRC:%=%.o)
-	$(CC) $(LDFLAGS) -o $@ $^ -framework CoreFoundation -framework Foundation -fobjc-arc -lobjc
+	$(CC) $(LDFLAGS) -o $@ $^ -framework CoreFoundation -framework Foundation -fobjc-arc -fobjc-runtime=gnustep-2.0 -lobjc
 	$(STRIP) $@
-	-$(LDID) -Sent.plist $@
+	#-$(LDID) -Sent.plist $@
 
 %.m.o: %.m
-	$(CC) $(CFLAGS) -c -o $@ $< -fobjc-arc
+	$(CC) $(CFLAGS) -c -o $@ $< -fobjc-arc -fobjc-runtime=gnustep-2.0
 
 clean:
 	rm -rf defaults defaults.dSYM $(SRC:%=%.o)
