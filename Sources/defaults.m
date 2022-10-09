@@ -128,7 +128,7 @@ int main(int argc, char *argv[], char *envp[])
 						NSLog(@"Can't determine domain name for application %@; defaults unchanged", [args objectAtIndex:3]);
 						return 1;
 					}
-				} else {
+				} /*else {
 					LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
 					NSArray *apps = [workspace allInstalledApplications];
 					for (LSApplicationProxy *proxy in apps) {
@@ -141,7 +141,7 @@ int main(int argc, char *argv[], char *envp[])
 						NSLog(@"Couldn't find an application named \"%@\"; defaults unchanged", [args objectAtIndex:3]);
 						return 1;
 					}
-				}
+				}*/
 				[args removeObjectAtIndex:2];
 			} else if ([[args objectAtIndex:2] hasPrefix:@"/"]) {
 				appid = [[args objectAtIndex:2] stringByResolvingSymlinksInPath];
@@ -197,6 +197,7 @@ int main(int argc, char *argv[], char *envp[])
 				NSLog(@"\nThe domain/default pair of (%@, %@) does not exist\n", appid, [args objectAtIndex:3]);
 				return 1;
 			}
+			/*
 			CFTypeID type = CFGetTypeID(result);
 			if (type == CFStringGetTypeID()) {
 				printf("Type is string\n");
@@ -218,6 +219,7 @@ int main(int argc, char *argv[], char *envp[])
 			} else {
 				printf("Found a value that is not of a known property list type\n");
 			}
+			*/
 			CFRelease(result);
 			return 0;
 		}
